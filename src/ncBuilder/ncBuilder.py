@@ -181,7 +181,7 @@ def create_nc(nc_file, lat, lon, comp_lvl=6, **kwargs):
     fractions of time.
     
     '''
-    is_dimensions = create_NC_dimension(nc_file, [len(lat), len(lon)])
+    is_dimensions = create_nc_dimension(nc_file, [len(lat), len(lon)])
 
     if is_dimensions:
         time_arr = kwargs.get('time',

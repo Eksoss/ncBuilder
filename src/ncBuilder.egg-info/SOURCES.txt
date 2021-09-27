@@ -4,6 +4,7 @@ pyproject.toml
 setup.cfg
 src/ncBuilder/__init__.py
 src/ncBuilder/ncBuilder.py
+src/ncBuilder/ncHelper.py
 src/ncBuilder.egg-info/PKG-INFO
 src/ncBuilder.egg-info/SOURCES.txt
 src/ncBuilder.egg-info/dependency_links.txt

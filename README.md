@@ -1,13 +1,7 @@
 # ncBuilder
 netCDF4 tool to help creating new files from scratch, and loading variables from existing ones.
 
-## version 0.0.5
-- Added ncHelper, which contains load_time, get_lats_lons and get_idx_pos
 
-## version 0.0.3
-- Modified function names to use snake_style pattern
-- Comments added to the main functions
-- Example updated to follow the new patterns
 
 ## example
 ```
@@ -46,7 +40,9 @@ ncBuilder.create_nc_variable(nc_file,
 ncBuilder.update_nc(nc_file, 'temp', temp)
 
 # updating partially a variable
-ncBuilder.update_nc(nc_file, 'temp', temp[:, 5:, :-5], dims=(slice(None), slice(5, None), slice(None, -5), ))
+ncBuilder.update_nc(nc_file, 'temp', temp[:, 5:, :-5], dims=(slice(None), 
+                                                             slice(5, None),
+															 slice(None, -5), ))
 
 # loading time
 times = ncHelper.load_time(nc_file.variables['time'])
@@ -60,3 +56,15 @@ idx, jdx = ncHelper.get_idx_pos(lat0, lon0, lats, lons)
 # closing the nc_file
 nc_file.close()
 ```
+
+## version 0.0.6
+- Added zlib, fill_value and variable_kw when creating a new variable, so it's more customizable
+- Changed the way dimension variables are created for more consistency of the process
+
+## version 0.0.5
+- Added ncHelper, which contains load_time, get_lats_lons and get_idx_pos
+
+## version 0.0.3
+- Modified function names to use snake_style pattern
+- Comments added to the main functions
+- Example updated to follow the new patterns

@@ -6,7 +6,7 @@ import numpy as np
 
 
 def create_nc_dimension(nc_file, shape):
-    """
+    '''
     Cria as dimensoes do arquivo (x, y, z, w)
         time = UNLIMITED ;
         level = UNLIMITED ;
@@ -26,7 +26,8 @@ def create_nc_dimension(nc_file, shape):
         Returns True if the dimensions are created correctly, else returns
         False.
         
-    """
+    '''
+    
     try:
         nc_file.createDimension("latitude", shape[0])
         nc_file.createDimension("longitude", shape[1])
@@ -37,7 +38,7 @@ def create_nc_dimension(nc_file, shape):
         return False
 
 
-def create_nc_variable(nc_file, var, comp_lvl=6, **kwargs):
+def create_nc_variable(nc_file, var, comp_lvl=6, zlib=True, fill_value=np.nan, variable_kw={}, **kwargs):
     '''
     Creates the new variable needed into the given dataset.
 
@@ -49,6 +50,12 @@ def create_nc_variable(nc_file, var, comp_lvl=6, **kwargs):
         Variable name.
     comp_lvl : int, optional
         Compression level.
+    zlib : bool, optional
+        Determines if data will be compressed using gzip within the netCDF file.
+    fill_value : float, optional
+        Fills the missing values with the parsed value.
+    variable_kw : dict
+        Dictionary containing additional kwargs used on createVariable, as described on its documentation.
 
     Optional Parameters
     -------------------
@@ -64,23 +71,29 @@ def create_nc_variable(nc_file, var, comp_lvl=6, **kwargs):
     units : str
         Unit of the variable.
         
+    Notes
+    -----
+    The createVariable documentation can be found here: https://unidata.github.io/netcdf4-python/#Dataset.createVariable
+        
     '''
+    
     nc_file.createVariable(var,
                            kwargs.get('dtype', np.float32),
                            kwargs.get('dims', ('time',
                                                'level',
                                                'latitude',
                                                'longitude')),
-                           zlib=True,
+                           zlib=zlib,
                            complevel=int(comp_lvl),
-                           fill_value=np.nan)
+                           fill_value=fill_value,
+                           **variable_kw)
     nc_file.variables[var].long_name = kwargs.get('long_name', var)
     nc_file.variables[var].standard_name = kwargs.get('standard_name', var)
     nc_file.variables[var].units = kwargs.get('units', var)
 
 
 def update_nc(nc_file, var, data, dims=[slice(None), ]):
-    """
+    '''
     Updates the variable given, within the slice parsed.
 
     Parameters
@@ -103,7 +116,8 @@ def update_nc(nc_file, var, data, dims=[slice(None), ]):
     -------
     : bool
 
-    """
+    '''
+    
     nc_file.variables[var][dims] = data[:]
     nc_file.sync()
     return True
@@ -171,7 +185,16 @@ def create_nc(nc_file, lat, lon, comp_lvl=6, **kwargs):
              'standard_name': 'temperature in C',
              'units': 'C'
             },
-        }
+        },
+        
+        {'rain':
+            {'dims': ('time', 'latitude', 'longitude'),
+             'dtype': np.float32,
+             'long_name': 'precipitation',
+             'standard_name': 'precipitation in mm (kg/m^2)',
+             'units': 'mm'
+            },
+        },
     }
 
     Notes
@@ -181,6 +204,7 @@ def create_nc(nc_file, lat, lon, comp_lvl=6, **kwargs):
     fractions of time.
     
     '''
+    
     is_dimensions = create_nc_dimension(nc_file, [len(lat), len(lon)])
 
     if is_dimensions:
@@ -194,32 +218,92 @@ def create_nc(nc_file, lat, lon, comp_lvl=6, **kwargs):
                                    for time in time_arr], dtype=np.float64)
 
         time_units = header_time.strftime('hours since %Y-%m-%d %H:%M:%S')
-        nc_file.createVariable('time', 'f8', ('time', ))
-        nc_file.variables['time'].long_name = 'Time'
-        nc_file.variables['time'].standard_name = 'times'
-        nc_file.variables['time'].units = time_units
-        nc_file.variables['time'][:] = float_time_arr
         
-        nc_file.createVariable('level', 'f8', ('level', ))
-        nc_file.variables['level'].long_name = 'Level'
-        nc_file.variables['level'].standard_name = 'air_pressure'
-        nc_file.variables['level'].units = 'hPa'
-        nc_file.variables['level'][:] = level_arr
+        # The dimensions and its variables are hard coded for consistency
+        create_nc_variable(nc_file,
+                           'time',
+                           comp_lvl=4,
+                           zlib=False,
+                           fill_value=None,
+                           dtype='f8',
+                           dims=('time', ),
+                           long_name='Time',
+                           standard_name='times',
+                           units=time_units)
+        
+        create_nc_variable(nc_file,
+                           'level',
+                           comp_lvl=4,
+                           zlib=False,
+                           fill_value=None,
+                           dtype='f8',
+                           dims=('level', ),
+                           long_name='Level',
+                           standard_name='air_pressure',
+                           units='hPa')
+        
+        create_nc_variable(nc_file,
+                           'latitude',
+                           comp_lvl=4,
+                           zlib=False,
+                           fill_value=None,
+                           dtype='f8',
+                           dims=('latitude', ),
+                           long_name='Latitude',
+                           standard_name='latitude',
+                           units='degrees_north')
+        
+        create_nc_variable(nc_file,
+                           'longitude',
+                           comp_lvl=4,
+                           zlib=False,
+                           fill_value=None,
+                           dtype='f8',
+                           dims=('longitude', ),
+                           long_name='Longitude',
+                           standard_name='longitude',
+                           units='degrees_east')
 
-        nc_file.createVariable('latitude', 'f8', ('latitude', ))
-        nc_file.variables['latitude'].long_name = 'Latitude'
-        nc_file.variables['latitude'].standard_name = 'latitude'
-        nc_file.variables['latitude'].units = 'degrees_north'
-        nc_file.variables['latitude'][:] = lat
+        # dimension variables are updated with their respective arrays
+        update_nc(nc_file, 'time', float_time_arr)
+        update_nc(nc_file, 'level', level_arr)
+        update_nc(nc_file, 'latitude', lat)
+        update_nc(nc_file, 'longitude', lon)
+        
+        '''
+          Those are the original way the dimension variables were created,
+        it'll be kept here for conference until 0.0.9
+          The project will probably change the way the dimensions are created
+        by parsing a 'dimensions' key word for its custom creation
+        
+        '''
+        
+        # nc_file.createVariable('time', 'f8', ('time', ))
+        # nc_file.variables['time'].long_name = 'Time'
+        # nc_file.variables['time'].standard_name = 'times'
+        # nc_file.variables['time'].units = time_units
+        # nc_file.variables['time'][:] = float_time_arr
+        
+        # nc_file.createVariable('level', 'f8', ('level', ))
+        # nc_file.variables['level'].long_name = 'Level'
+        # nc_file.variables['level'].standard_name = 'air_pressure'
+        # nc_file.variables['level'].units = 'hPa'
+        # nc_file.variables['level'][:] = level_arr
 
-        nc_file.createVariable('longitude', 'f8', ('longitude', ))
-        nc_file.variables['longitude'].long_name = 'Longitude'
-        nc_file.variables['longitude'].standard_name = 'longitude'
-        nc_file.variables['longitude'].units = 'degrees_east'
-        nc_file.variables['longitude'][:] = lon
+        # nc_file.createVariable('latitude', 'f8', ('latitude', ))
+        # nc_file.variables['latitude'].long_name = 'Latitude'
+        # nc_file.variables['latitude'].standard_name = 'latitude'
+        # nc_file.variables['latitude'].units = 'degrees_north'
+        # nc_file.variables['latitude'][:] = lat
 
-        for var, var_kwargs in kwargs.get('vars', {}).items():
-            create_nc_variable(nc_file, var, comp_lvl, **var_kwargs)
+        # nc_file.createVariable('longitude', 'f8', ('longitude', ))
+        # nc_file.variables['longitude'].long_name = 'Longitude'
+        # nc_file.variables['longitude'].standard_name = 'longitude'
+        # nc_file.variables['longitude'].units = 'degrees_east'
+        # nc_file.variables['longitude'][:] = lon
+
+        for var, var_kw in kwargs.get('vars', {}).items():
+            create_nc_variable(nc_file, var, comp_lvl, **var_kw)
         
     nc_file.Conventions = "CF-1.4"
     nc_file.Metadata_Conventions = "Unidata Dataset Discovery v1.0"
@@ -228,4 +312,4 @@ def create_nc(nc_file, lat, lon, comp_lvl=6, **kwargs):
         dt.datetime.now().strftime('%Y-%m-%dT%H:%M')
     nc_file.sync()
 
-    return(lat, lon)
+    return lat, lon

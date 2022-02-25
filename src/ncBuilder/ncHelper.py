@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# !/usr/bin/env python3
 import netCDF4 as nc
 import numpy as np
 import pandas as pd
@@ -32,7 +31,7 @@ def load_time(nc_variable_time):
     head_time = pd.to_datetime('T'.join(date)).to_pydatetime()
     return np.array([head_time + dt.timedelta(**{delta: float(i)})\
                      for i in nc_variable_time[:]], dtype=dt.datetime)
-                     
+
 
 def get_lats_lons(nc_something, skip=1, trim=0):
     '''
@@ -61,6 +60,7 @@ def get_lats_lons(nc_something, skip=1, trim=0):
     nc_file = _verify_nc(nc_something)
     trim_slice = slice(trim, -trim, skip) if trim > 0 else slice(None, None, skip)
     try:
+        # some legacy files contain 'lat' and 'lon' as dimensions
         lats = nc_file.variables['lat'][trim_slice]
         lons = nc_file.variables['lon'][trim_slice]
     except:
@@ -92,7 +92,7 @@ def _verify_nc(nc_something):
     elif isinstance(nc_something, nc.Dataset):
         nc_file = nc_something
     else:
-        raise 'invalid object, must be str (readable .nc/.nc4 file) or nc.Dataset'
+        raise TypeError('invalid object, must be str (readable .nc/.nc4 file) or nc.Dataset')
     return nc_file
 
 
@@ -120,6 +120,10 @@ def get_idx_pos(lat0, lon0, lats, lons):
     minindexY : int
         Index that represents which point of lons is the nearest to lon0.
     
+    Notes
+    -----
+    lats and lons must be in degrees, it's not asserted.
+    
     '''
     
     latvals = np.radians(lats[:])
@@ -128,4 +132,4 @@ def get_idx_pos(lat0, lon0, lats, lons):
     lon0_rad = np.radians(lon0)
     minindexX = np.abs(latvals[:] - lat0_rad).argmin()
     minindexY = np.abs(lonvals[:] - lon0_rad).argmin()
-    return (minindexX, minindexY)
+    return minindexX, minindexY

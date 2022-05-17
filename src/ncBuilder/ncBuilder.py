@@ -5,9 +5,9 @@ import netCDF4 as nc
 import numpy as np
 
 
-def create_nc_dimension(nc_file, shape):
+def _create_nc_dimension(nc_file, shape):
     '''
-    Cria as dimensoes do arquivo (x, y, z, w)
+    Creates the dimensions of the file (x, y, z, w)
         time = UNLIMITED ;
         level = UNLIMITED ;
         latitude = shape[0] ;
@@ -38,6 +38,48 @@ def create_nc_dimension(nc_file, shape):
         return False
 
 
+def create_nc_dimension(nc_file, var, size=None, variable_kw={}):
+    '''
+    Creates a new dimension and its variable associated.
+    
+    Returns True if dimension creation was successful else returns False.
+    
+    Parameters
+    ----------
+    nc_file : netCDF4.Dataset
+        Dataset file that will be added the new dimension and its own variable.
+    var : str
+        Dimension/Variable name.
+    size : int, optional
+        Size of the dimension.
+    variable_kw : dict, optional
+        Dictionary containing additional kwargs used on create_nc_variable.
+        
+    Returns
+    -------
+    : bool
+        Returns a bool representing if the process was successful of not.
+    
+    '''
+    
+    try:
+        nc_file.createDimension(var, size)
+        comp_lvl = variable_kw.pop('comp_lvl', 6)
+        zlib = variable_kw.pop('zlib', True)
+        fill_value = variable_kw.pop('fill_value', np.nan)
+        _ = variable_kw.pop('dims', None)
+        create_nc_variable(nc_file,
+                           var,
+                           comp_lvl,
+                           zlib,
+                           fill_value,
+                           variable_kw,
+                           dims=(var, ))
+        return True
+    except:
+        return False
+
+
 def create_nc_variable(nc_file, var, comp_lvl=6, zlib=True, fill_value=np.nan, variable_kw={}, **kwargs):
     '''
     Creates the new variable needed into the given dataset.
@@ -54,7 +96,7 @@ def create_nc_variable(nc_file, var, comp_lvl=6, zlib=True, fill_value=np.nan, v
         Determines if data will be compressed using gzip within the netCDF file.
     fill_value : float, optional
         Fills the missing values with the parsed value.
-    variable_kw : dict
+    variable_kw : dict, optional
         Dictionary containing additional kwargs used on createVariable, as described on its documentation.
 
     Optional Parameters
@@ -205,7 +247,7 @@ def create_nc(nc_file, lat, lon, comp_lvl=6, **kwargs):
     
     '''
     
-    is_dimensions = create_nc_dimension(nc_file, [len(lat), len(lon)])
+    is_dimensions = _create_nc_dimension(nc_file, [len(lat), len(lon)])
 
     if is_dimensions:
         time_arr = kwargs.get('time',

@@ -38,6 +38,27 @@ def _create_nc_dimension(nc_file, shape):
         return False
 
 
+def _verify_timeseries(nc_file, _nc_config, _variable_kw):
+    '''
+    Modifies the input dict to include a chunksizes kwarg.
+    
+    Parameters
+    ----------
+    nc_file : netCDF4.Dataset
+        Dataset file that will be added the new dimension and its own variable.
+    _nc_config : dict
+        Dict containing general configuration for creating a new nc.Variable.
+    _varaible_kw : dict
+        Dict containing specific configuration for creating a new nc.Variable.
+        
+    '''
+    
+    if _variable_kw.pop('timeseries', False):
+        _sizes = [nc_file[_dim].size for _dim in _nc_config['dims']]
+        _chunksizes = _sizes[:1] + [np.gcd(64, i) for i in _sizes[1:]]
+        _variable_kw['chunksizes'] = tuple(_chunksizes)
+
+
 def create_nc_dimension(nc_file, var, size=None, variable_kw={}):
     '''
     Creates a new dimension and its variable associated.
@@ -112,6 +133,8 @@ def create_nc_variable(nc_file, var, comp_lvl=6, zlib=True, fill_value=np.nan, v
         The standard name of the variable.
     units : str
         Unit of the variable.
+    timeseries : bool
+        Verifies if variable is preferably a timeseries, so chunksizes is applied.
         
     Notes
     -----
@@ -119,6 +142,7 @@ def create_nc_variable(nc_file, var, comp_lvl=6, zlib=True, fill_value=np.nan, v
         
     '''
     
+    _verify_timeseries(nc_file, kwargs, variable_kw)
     nc_file.createVariable(var,
                            kwargs.get('dtype', np.float32),
                            kwargs.get('dims', ('time',
@@ -225,7 +249,10 @@ def create_nc(nc_file, lat, lon, comp_lvl=6, **kwargs):
              'dtype': np.float64,
              'long_name': 'temperature',
              'standard_name': 'temperature in C',
-             'units': 'C'
+             'units': 'C',
+             'variable_kw': {'least_significant_digit': 2,
+                             'timeseries': True,
+                            },
             },
         },
         

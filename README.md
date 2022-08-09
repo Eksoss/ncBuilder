@@ -72,6 +72,9 @@ idx, jdx = ncHelper.get_idx_pos(lat0, lon0, lats, lons)
 nc_file.close()
 ```
 
+## version 0.0.7a
+- Packages are now installed with the lib, they were not configured properly.
+
 ## version 0.0.7
 - Added create_nc_dimension, so new custom dimensions can be easily added.
 - Minor modifications to the inner creation of dimensions to accomodate the new function.

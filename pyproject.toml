@@ -1,9 +1,3 @@
 [build-system]
-requires = [
-	"setuptools>=42",
-	"wheel",
-	"numpy",
-	"pandas",
-	"netCDF4"
-]
+requires = ["setuptools>=42"]
 build-backend = "setuptools.build_meta"

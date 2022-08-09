@@ -8,4 +8,5 @@ src/ncBuilder/ncHelper.py
 src/ncBuilder.egg-info/PKG-INFO
 src/ncBuilder.egg-info/SOURCES.txt
 src/ncBuilder.egg-info/dependency_links.txt
+src/ncBuilder.egg-info/requires.txt
 src/ncBuilder.egg-info/top_level.txt

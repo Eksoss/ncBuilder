@@ -1,11 +1,13 @@
 Metadata-Version: 2.1
 Name: ncBuilder
-Version: 0.0.8
+Version: 0.0.9
 Summary: ncBuilder
 Home-page: https://github.com/Eksoss/ncBuilder
 Author: Francisco Silva Viana
 Author-email: chicoviana12@hotmail.com
+License: UNKNOWN
 Project-URL: Bug Tracker, https://github.com/Eksoss/ncBuilder/issues
+Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
@@ -105,3 +107,5 @@ nc_file.close()
 - Modified function names to use snake_style pattern
 - Comments added to the main functions
 - Example updated to follow the new patterns
+
+

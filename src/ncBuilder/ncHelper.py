@@ -29,8 +29,17 @@ def load_time(nc_variable_time):
     
     delta, _, *date = nc_variable_time.units.split(' ')
     head_time = pd.to_datetime('T'.join(date)).to_pydatetime()
-    return np.array([head_time + dt.timedelta(**{delta: float(i)})\
-                     for i in nc_variable_time[:]], dtype=dt.datetime)
+    # return np.array([head_time + dt.timedelta(**{delta: float(i)})\
+    #                  for i in nc_variable_time[:]], dtype=dt.datetime)
+    return np.array(
+        pd.to_datetime(
+            [head_time + dt.timedelta(**{delta: float(i)})\
+             for i in nc_variable_time[:]]
+        )
+        .round("1s")
+        .to_pydatetime(),
+        dtype=dt.datetime,
+    )
 
 
 def get_lats_lons(nc_something, skip=1, trim=0):
